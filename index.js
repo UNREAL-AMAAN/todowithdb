@@ -2,6 +2,7 @@ const { UserModel, TodoModel } = require("./db");
 const express = require("express");
 const bcrypt = require("bcrypt");
 const app = express();
+const validator = require("validator");
 
 const { z } = require("zod");
 
@@ -21,14 +22,35 @@ app.post("/signup", async (req, res) => {
         name: z.string(),
     });
 
+    const valid_email = validator.isEmail(req.body.email);
+    if (!valid_email) {
+        return res.status(400).json({ message: "Invalid email" });
+    }
+
+    const options = {
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1,
+        minSymbols: 1,
+    };
+    const valid_password = validator.isStrongPassword(
+        req.body.password,
+        options
+    );
+    if (!valid_password) {
+        return res.json({
+            message: "Invalid password",
+        });
+    }
+
     // const parsed = req_schema.parse(req.body);
     const safeparsed = req_schema.safeParse(req.body);
 
     if (!safeparsed.success) {
-        return res.status(400).json({ message: "Invalid request" ,
-            error : safeparsed.error
-        });
-
+        return res
+            .status(400)
+            .json({ message: "Invalid request", error: safeparsed.error });
     }
 
     const email = req.body.email;
